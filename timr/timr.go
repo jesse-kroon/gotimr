@@ -6,17 +6,20 @@ import (
 )
 
 type Timr struct {
-	title string
-	Done  chan struct{}
+	Title    string
+	Done     chan struct{}
+	Progress chan float64
 }
 
 func NewTimr(title string, duration time.Duration) *Timr {
-	t := &Timr{
-		title: title,
-		Done:  make(chan struct{}),
+	timr := &Timr{
+		Title:    title,
+		Done:     make(chan struct{}),
+		Progress: make(chan float64),
 	}
 
 	go func() {
+		start := time.Now()
 		timer := time.NewTimer(duration)
 		ticker := time.NewTicker(time.Second)
 		defer ticker.Stop()
@@ -25,14 +28,17 @@ func NewTimr(title string, duration time.Duration) *Timr {
 			select {
 			case <-timer.C:
 				fmt.Printf("%s expired\n", title)
-				close(t.Done)
+				close(timr.Done)
+				close(timr.Progress)
 				return
 			case <-ticker.C:
-				fmt.Printf("%s is still ticking\n", title)
+				elapsed := time.Since(start)
+				percent := float64(elapsed) / float64(duration) * 100
+				timr.Progress <- percent
 			}
 		}
 
 	}()
 
-	return t
+	return timr
 }
