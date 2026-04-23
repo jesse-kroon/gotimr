@@ -11,7 +11,7 @@ type Timr struct {
 	Progress chan float64
 }
 
-func NewTimr(title string, duration time.Duration) *Timr {
+func NewTimr(title string, duration, interval time.Duration) *Timr {
 	timr := &Timr{
 		Title:    title,
 		Done:     make(chan struct{}),
@@ -21,13 +21,13 @@ func NewTimr(title string, duration time.Duration) *Timr {
 	go func() {
 		start := time.Now()
 		timer := time.NewTimer(duration)
-		ticker := time.NewTicker(time.Second)
+		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
 		for {
 			select {
 			case <-timer.C:
-				fmt.Printf("%s expired\n", title)
+				fmt.Printf("%s is at 100%%\n", title)
 				close(timr.Done)
 				close(timr.Progress)
 				return

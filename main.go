@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"time"
 
@@ -8,10 +9,18 @@ import (
 )
 
 func main() {
-	timer1 := timr.NewTimr("timer1", 17*time.Minute)
+
+	durationPtr := flag.Int("duration", 10, "duration of the timer in seconds")
+	tickInterval := flag.Int("interval", 1, "interval of ticks used (in seconds) to print timer progress")
+	flag.Parse()
+
+	duration := time.Duration(*durationPtr) * time.Second
+	interval := time.Duration(*tickInterval) * time.Second
+
+	timer1 := timr.NewTimr("timer1", duration, interval)
 
 	for p := range timer1.Progress {
-		fmt.Printf("%s is at %.2f%%\n", timer1.Title, p)
+		fmt.Printf("%s is at %0.f%%\n", timer1.Title, p)
 	}
 	<-timer1.Done
 }
