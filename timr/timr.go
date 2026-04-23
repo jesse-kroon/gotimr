@@ -24,11 +24,11 @@ func NewTimr(title string, duration time.Duration) *Timr {
 		for {
 			select {
 			case <-timer.C:
-				fmt.Println("Timer expired")
+				fmt.Printf("%s expired\n", title)
 				close(t.Done)
 				return
 			case <-ticker.C:
-				fmt.Println(fmt.Sprintf("%s is still ticking", title))
+				fmt.Printf("%s is still ticking\n", title)
 			}
 		}
 
