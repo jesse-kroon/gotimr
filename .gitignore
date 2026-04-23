@@ -7,7 +7,7 @@
 *.dll
 *.so
 *.dylib
-./gotimr
+gotimr
 
 # Test binary, built with `go test -c`
 *.test
