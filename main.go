@@ -17,9 +17,9 @@ func main() {
 	duration := time.Duration(*durationPtr) * time.Second
 	interval := time.Duration(*intervalPtr) * time.Second
 
-	timer1 := timr.NewTimr(*titlePtr, duration, interval)
+	timer := timr.NewTimr(*titlePtr, duration, interval)
 
-	for p := range timer1.Progress {
-		fmt.Printf("%s is at %0.f%%\n", timer1.Title, p)
+	for p := range timer.Progress {
+		fmt.Printf("%s is at %0.f%%\n", timer.Title, p)
 	}
 }
