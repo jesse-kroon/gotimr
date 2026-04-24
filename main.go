@@ -9,9 +9,9 @@ import (
 )
 
 func main() {
+	titlePtr := flag.String("title", "Timer", "title of the timer you want to set")
 	durationPtr := flag.Int("duration", 10, "duration of the timer in seconds")
 	intervalPtr := flag.Int("interval", 1, "interval of ticks used (in seconds) to print timer progress")
-	titlePtr := flag.String("title", "Timer", "title of the timer you want to set")
 	flag.Parse()
 
 	duration := time.Duration(*durationPtr) * time.Second
