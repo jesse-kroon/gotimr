@@ -7,14 +7,12 @@ import (
 
 type Timr struct {
 	Title    string
-	Done     chan struct{}
 	Progress chan float64
 }
 
 func NewTimr(title string, duration, interval time.Duration) *Timr {
 	timr := &Timr{
 		Title:    title,
-		Done:     make(chan struct{}),
 		Progress: make(chan float64),
 	}
 
@@ -28,7 +26,6 @@ func NewTimr(title string, duration, interval time.Duration) *Timr {
 			select {
 			case <-timer.C:
 				fmt.Printf("%s is at 100%%\n", title)
-				close(timr.Done)
 				close(timr.Progress)
 				return
 			case <-ticker.C:
