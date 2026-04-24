@@ -1,18 +1,16 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
-	"time"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/jesse-kroon/gotimr/timr"
 )
 
 type model struct {
 	choices  []string
-	pointer  int
+	cursor   int
 	selected map[int]struct{}
 }
 
@@ -28,11 +26,43 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return m, tea.Quit
+		case "enter", "space":
+			if _, ok := m.selected[m.cursor]; ok {
+				delete(m.selected, m.cursor)
+			} else {
+				m.selected[m.cursor] = struct{}{}
+			}
+		}
+	}
+
 	return m, nil
 }
 
 func (m model) View() tea.View {
-	return tea.NewView("")
+	var s strings.Builder
+	s.WriteString("Welcome to Timr!\n\n")
+
+	for i, choice := range m.choices {
+		cursor := " "
+		if m.cursor == i {
+			cursor = "->"
+		}
+
+		checked := " "
+		if _, ok := m.selected[i]; ok {
+			checked = "X"
+		}
+
+		fmt.Fprintf(&s, "%s [%s] %s\n", cursor, checked, choice)
+	}
+
+	s.WriteString("\nPress q to quit.\n")
+	return tea.NewView(s.String())
 }
 
 func main() {
