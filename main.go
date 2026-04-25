@@ -9,17 +9,13 @@ import (
 )
 
 func main() {
-	titlePtr := flag.String("title", "Timer", "title of the timer you want to set")
-	durationPtr := flag.Int("duration", 10, "duration of the timer in seconds")
-	intervalPtr := flag.Int("interval", 1, "interval of ticks used (in seconds) to print timer progress")
+	durationPtr := flag.Int("duration", 120, "duration of the timer in minutes")
 	flag.Parse()
+	duration := time.Duration(*durationPtr) * time.Minute
 
-	duration := time.Duration(*durationPtr) * time.Second
-	interval := time.Duration(*intervalPtr) * time.Second
-
-	timer := timr.NewTimr(*titlePtr, duration, interval)
+	timer := timr.NewTimr("test", duration, 1*time.Second)
 
 	for p := range timer.Progress {
-		fmt.Printf("%s is at %0.f%%\n", timer.Title, p)
+		fmt.Println(p)
 	}
 }

@@ -7,17 +7,19 @@ import (
 
 type Timr struct {
 	Title    string
-	Progress chan float64
+	Progress chan string
 }
 
 func NewTimr(title string, duration, interval time.Duration) *Timr {
-	timr := &Timr{
+	t := &Timr{
 		Title:    title,
-		Progress: make(chan float64),
+		Progress: make(chan string, 1),
 	}
 
 	go func() {
 		start := time.Now()
+		endTime := start.Add(duration)
+
 		timer := time.NewTimer(duration)
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
@@ -25,17 +27,31 @@ func NewTimr(title string, duration, interval time.Duration) *Timr {
 		for {
 			select {
 			case <-timer.C:
-				fmt.Printf("%s is at 100%%\n", title)
-				close(timr.Progress)
+				t.Progress <- "Done"
+				close(t.Progress)
 				return
+
 			case <-ticker.C:
-				elapsed := time.Since(start)
-				percent := float64(elapsed) / float64(duration) * 100
-				timr.Progress <- percent
+				remaining := max(time.Until(endTime), 0)
+
+				hours := int(remaining.Hours())
+				minutes := int(remaining.Minutes()) % 60
+				seconds := int(remaining.Seconds()) % 60
+
+				var formatted string
+				if hours > 0 {
+					formatted = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+				} else {
+					formatted = fmt.Sprintf("%02d:%02d", minutes, seconds)
+				}
+
+				select {
+				case t.Progress <- formatted:
+				default:
+				}
 			}
 		}
-
 	}()
 
-	return timr
+	return t
 }
