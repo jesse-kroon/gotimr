@@ -1,37 +1,61 @@
 package main
 
 import (
-	"flag"
+	"context"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"github.com/jesse-kroon/gotimr/timr"
+	"github.com/urfave/cli/v3"
 )
 
 type TimeUnit int
 
 func main() {
-	// cmd := &cli.Command{
-	// 	Commands: []*cli.Command{
-	// 		{},
-	// 	},
-	// }
-	//
-	// if err := cmd.Run(context.Background(), os.Args); err != nil {
-	// 	log.Fatal(err)
-	// }
-	titlePtr := flag.String("title", "Timer", "timer title")
-	durationPtr := flag.Duration("duration", time.Minute, "duration of the timer. Accepted inputs are e.g. \"45s\"  \"1m17s\"")
-	intervalPtr := flag.Int("interval", 1, "tick interval in seconds")
-	flag.Parse()
+	var duration time.Duration
+	var interval time.Duration
+	var title string
 
-	duration := *durationPtr
-	interval := time.Duration(*intervalPtr) * time.Second
+	cmd := &cli.Command{
+		Name:  "gotimr",
+		Usage: "a cli pomodoro tool written in go",
+		Flags: []cli.Flag{
+			&cli.DurationFlag{
+				Name:        "duration",
+				Value:       time.Minute,
+				Usage:       "duration of the timer (e.g. '45s' '1m20s' '2h30m')",
+				Aliases:     []string{"d"},
+				Destination: &duration,
+			},
+			&cli.DurationFlag{
+				Name:        "interval",
+				Value:       time.Second,
+				Usage:       "tick interval (how timer is updated)",
+				Aliases:     []string{"i"},
+				Destination: &interval,
+			},
+			&cli.StringFlag{
+				Name:        "Title",
+				Value:       "Timer",
+				Usage:       "title of your timer",
+				Aliases:     []string{"t"},
+				Destination: &title,
+			},
+		},
+		Action: func(ctx context.Context, c *cli.Command) error {
+			timer := timr.NewTimr(title, duration, interval)
+			fmt.Printf("%s\n", timer.Title)
+			for p := range timer.Progress {
+				fmt.Printf("\r\033[K%s", p)
+			}
 
-	timer := timr.NewTimr(*titlePtr, duration, interval)
+			return nil
+		},
+	}
 
-	fmt.Printf("%s\n", timer.Title)
-	for p := range timer.Progress {
-		fmt.Printf("\r\033[K%s", p)
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
+		log.Fatal(err)
 	}
 }
