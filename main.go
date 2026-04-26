@@ -32,7 +32,7 @@ func main() {
 			&cli.DurationFlag{
 				Name:        "interval",
 				Value:       time.Second,
-				Usage:       "tick interval (how timer is updated)",
+				Usage:       "tick interval (how often the timer updates)",
 				Aliases:     []string{"i"},
 				Destination: &interval,
 			},
