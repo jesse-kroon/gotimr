@@ -10,24 +10,6 @@ import (
 
 type TimeUnit int
 
-const (
-	seconds TimeUnit = iota
-	minutes
-	hours
-)
-
-var unitName = map[TimeUnit]string{
-	seconds: "seconds",
-	minutes: "minutes",
-	hours:   "hours",
-}
-
-var unit = map[TimeUnit]time.Duration{
-	seconds: time.Second,
-	minutes: time.Minute,
-	hours:   time.Hour,
-}
-
 func main() {
 	// cmd := &cli.Command{
 	// 	Commands: []*cli.Command{
