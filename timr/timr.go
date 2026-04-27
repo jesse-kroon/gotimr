@@ -2,15 +2,8 @@ package timr
 
 import (
 	"context"
-	"fmt"
-	"math"
 	"time"
 )
-
-type Timr struct {
-	Title string
-	C     <-chan Tick
-}
 
 type Tick struct {
 	Remaining time.Duration
@@ -18,40 +11,32 @@ type Tick struct {
 	Done      bool
 }
 
-func formatRemaining(d time.Duration) string {
-	totalSeconds := int(math.Ceil(d.Seconds()))
-
-	hours := totalSeconds / 3600
-	minutes := (totalSeconds % 3600) / 60
-	seconds := totalSeconds % 60
-
-	if hours > 0 {
-		return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
-	}
-	return fmt.Sprintf("%02d:%02d", minutes, seconds)
+type Timr struct {
+	Title string
+	C     <-chan Tick
 }
 
 func New(ctx context.Context, title string, duration, interval time.Duration) *Timr {
 	ch := make(chan Tick)
-	timr := &Timr{
+
+	t := &Timr{
 		Title: title,
 		C:     ch,
 	}
 
 	go func() {
 		defer close(ch)
-		start := time.Now()
-		endTime := start.Add(duration)
-
-		timer := time.NewTimer(duration)
-		defer timer.Stop()
 
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
+		remaining := duration
+		elapsed := time.Duration(0)
+
+		// initial tick (immediate feedback)
 		ch <- Tick{
-			Remaining: duration,
-			Elapsed:   0,
+			Remaining: remaining,
+			Elapsed:   elapsed,
 			Done:      false,
 		}
 
@@ -60,26 +45,27 @@ func New(ctx context.Context, title string, duration, interval time.Duration) *T
 			case <-ctx.Done():
 				return
 
-			case <-timer.C:
-				ch <- Tick{
-					Remaining: 0,
-					Elapsed:   time.Since(start),
-					Done:      true,
-				}
-				return
-
 			case <-ticker.C:
-				now := time.Now()
-				remaining := max(endTime.Sub(now), 0)
+				elapsed += interval
+				remaining -= interval
+
+				if remaining <= 0 {
+					ch <- Tick{
+						Remaining: 0,
+						Elapsed:   elapsed,
+						Done:      true,
+					}
+					return
+				}
 
 				ch <- Tick{
 					Remaining: remaining,
-					Elapsed:   now.Sub(start),
+					Elapsed:   elapsed,
 					Done:      false,
 				}
 			}
 		}
 	}()
 
-	return timr
+	return t
 }

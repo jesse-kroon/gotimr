@@ -53,7 +53,7 @@ func main() {
 				return fmt.Errorf("interval cannot exceed duration")
 			}
 
-			ctx, cancel := context.WithCancel()
+			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 
 			timr := timr.New(ctx, title, duration, interval)
@@ -74,18 +74,17 @@ func main() {
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}
-	// titlePtr := flag.String("title", "Timer", "timer title")
-	// intervalPtr := flag.Int("interval", 1, "tick interval in seconds")
-	// durationPtr := flag.Int("duration", 1, "duration of the timer in minutes")
-	// flag.Parse()
-	//
-	// duration := time.Duration(*durationPtr) * time.Minute
-	// interval := time.Duration(*intervalPtr) * time.Second
-	//
-	// timer := timr.NewTimr(*titlePtr, duration, interval)
-	//
-	// fmt.Printf("%s\n", timer.Title)
-	// for p := range timer.Progress {
-	// 	fmt.Printf("\r\033[K%s", p)
-	// }
+}
+
+func formatRemaining(d time.Duration) string {
+	totalSeconds := int(d.Seconds())
+
+	h := totalSeconds / 3600
+	m := (totalSeconds % 3600) / 60
+	s := totalSeconds % 60
+
+	if h > 0 {
+		return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
+	}
+	return fmt.Sprintf("%02d:%02d", m, s)
 }
