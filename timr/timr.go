@@ -1,14 +1,21 @@
 package timr
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"time"
 )
 
 type Timr struct {
-	Title    string
-	Progress chan string
+	Title string
+	C     <-chan Tick
+}
+
+type Tick struct {
+	Remaining time.Duration
+	Elapsed   time.Duration
+	Done      bool
 }
 
 func formatRemaining(d time.Duration) string {
@@ -24,40 +31,55 @@ func formatRemaining(d time.Duration) string {
 	return fmt.Sprintf("%02d:%02d", minutes, seconds)
 }
 
-func NewTimr(title string, duration, interval time.Duration) *Timr {
-	t := &Timr{
-		Title:    title,
-		Progress: make(chan string, 1),
+func New(ctx context.Context, title string, duration, interval time.Duration) *Timr {
+	ch := make(chan Tick)
+	timr := &Timr{
+		Title: title,
+		C:     ch,
 	}
 
 	go func() {
+		defer close(ch)
 		start := time.Now()
 		endTime := start.Add(duration)
 
 		timer := time.NewTimer(duration)
+		defer timer.Stop()
+
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
-		t.Progress <- formatRemaining(duration)
+		ch <- Tick{
+			Remaining: duration,
+			Elapsed:   0,
+			Done:      false,
+		}
+
 		for {
 			select {
+			case <-ctx.Done():
+				return
+
 			case <-timer.C:
-				t.Progress <- "Done"
-				close(t.Progress)
+				ch <- Tick{
+					Remaining: 0,
+					Elapsed:   time.Since(start),
+					Done:      true,
+				}
 				return
 
 			case <-ticker.C:
-				remaining := max(time.Until(endTime), 0)
+				now := time.Now()
+				remaining := max(endTime.Sub(now), 0)
 
-				formatted := formatRemaining(remaining)
-
-				select {
-				case t.Progress <- formatted:
-				default:
+				ch <- Tick{
+					Remaining: remaining,
+					Elapsed:   now.Sub(start),
+					Done:      false,
 				}
 			}
 		}
 	}()
 
-	return t
+	return timr
 }

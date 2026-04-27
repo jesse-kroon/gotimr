@@ -8,49 +8,65 @@ import (
 	"time"
 
 	"github.com/jesse-kroon/gotimr/timr"
+
 	"github.com/urfave/cli/v3"
 )
 
-type TimeUnit int
-
 func main() {
-	var duration time.Duration
-	var interval time.Duration
-	var title string
-
 	cmd := &cli.Command{
 		Name:  "gotimr",
 		Usage: "a cli pomodoro tool written in go",
 		Flags: []cli.Flag{
 			&cli.DurationFlag{
-				Name:        "duration",
-				Value:       time.Minute,
-				Usage:       "duration of the timer (e.g. '45s' '1m20s' '2h30m')",
-				Aliases:     []string{"d"},
-				Destination: &duration,
+				Name:    "duration",
+				Aliases: []string{"d"},
+				Value:   time.Minute,
+				Usage:   "duration (e.g. 45s, 1m20s, 2h",
 			},
 			&cli.DurationFlag{
-				Name:        "interval",
-				Value:       time.Second,
-				Usage:       "tick interval (how often the timer updates)",
-				Aliases:     []string{"i"},
-				Destination: &interval,
+				Name:    "interval",
+				Aliases: []string{"a"},
+				Value:   time.Second,
+				Usage:   "update interval",
 			},
 			&cli.StringFlag{
-				Name:        "Title",
-				Value:       "Timer",
-				Usage:       "title of your timer",
-				Aliases:     []string{"t"},
-				Destination: &title,
+				Name:    "title",
+				Aliases: []string{"t"},
+				Value:   "Timer",
+				Usage:   "timer title",
 			},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
-			timer := timr.NewTimr(title, duration, interval)
-			fmt.Printf("%s\n", timer.Title)
-			for p := range timer.Progress {
-				fmt.Printf("\r\033[K%s", p)
+			duration := c.Duration("duration")
+			interval := c.Duration("interval")
+			title := c.String("title")
+
+			if duration <= 0 {
+				return fmt.Errorf("duration must be > 0")
 			}
 
+			if interval <= 0 {
+				return fmt.Errorf("interval must be > 0")
+			}
+
+			if interval > duration {
+				return fmt.Errorf("interval cannot exceed duration")
+			}
+
+			ctx, cancel := context.WithCancel()
+			defer cancel()
+
+			timr := timr.New(ctx, title, duration, interval)
+
+			fmt.Println(timr.Title)
+
+			for tick := range timr.C {
+				fmt.Printf("\r\033[K%s", formatRemaining(tick.Remaining))
+
+				if tick.Done {
+					fmt.Print("\nDone\n")
+				}
+			}
 			return nil
 		},
 	}
@@ -58,4 +74,18 @@ func main() {
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}
+	// titlePtr := flag.String("title", "Timer", "timer title")
+	// intervalPtr := flag.Int("interval", 1, "tick interval in seconds")
+	// durationPtr := flag.Int("duration", 1, "duration of the timer in minutes")
+	// flag.Parse()
+	//
+	// duration := time.Duration(*durationPtr) * time.Minute
+	// interval := time.Duration(*intervalPtr) * time.Second
+	//
+	// timer := timr.NewTimr(*titlePtr, duration, interval)
+	//
+	// fmt.Printf("%s\n", timer.Title)
+	// for p := range timer.Progress {
+	// 	fmt.Printf("\r\033[K%s", p)
+	// }
 }
